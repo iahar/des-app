@@ -123,39 +123,6 @@ class Application:
         elif event.keycode == 88:
             event.widget.event_generate('<<Cut>>')
 
-    def plot_graph1(self):
-        ind_bit = self.bit.get()
-        try: 
-            ind_bit = int(ind_bit)
-        except Exception as e:
-            return
-        if not ind_bit or int(ind_bit) > 16:
-            messagebox.showerror("Ошибка", "Введите номер бита от 1 до 16.")
-            return
-
-        # Создаем фигуру для графика
-        fig = Figure(figsize=(5, 4), dpi=100)
-        ax = fig.add_subplot(111)
-
-        # Создаем массив для графика
-        x = range(1, 17)        
-        try:
-            pt = self.plaintext_entry.get()
-            key = self.key_entry.get()
-            encoding = self.encoding_var.get() 
-            y_pt, y_key = calculate_avalanche(pt, key, encoding, ind_bit-1)
-        except Exception as e:
-            messagebox.showerror("Нет данных для построения.", f"Ошибка: {str(e)}")
-            return
-
-        # Построение графика
-        ax.plot(x, y_pt)
-
-        # Создаем canvas для отображения графика
-        canvas = FigureCanvasTkAgg(fig, master=self.root)
-        canvas.draw()
-        canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-
     def plot_graph(self):
         ind_bit = self.bit.get()
         try: 
