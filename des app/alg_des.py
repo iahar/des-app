@@ -395,6 +395,6 @@ def decrypt_file(ct_file, key_file, encoding, output_file):
     print(f"Decrypted text saved to {output_file}")
 
 '''
-# сделать взамодействие с файлами
-# функция лавинного эффекта и 2 графика (может быть по hex и ascii)
-# функции для критериев
+# make interaction with files
+# avalanche effect function and 2 graphics (can be hex and ascii)
+# functions for criteria
