@@ -1,15 +1,14 @@
 ﻿# -*- coding: utf-8 -*-
 import tkinter as tk
 from tkinter import messagebox, StringVar
-from alg_des import encrypt, decrypt
-from alg_app import main
+from alg_des import block_encrypt, block_decrypt
 
 class Application:
     def __init__(self):
         # Создание главного окна
         self.root = tk.Tk()
         self.root.title("DES Шифратор/Дешифратор")
-        self.root.geometry("700x500")  # Установка размера окна
+        self.root.geometry("700x550")  # Установка размера окна
         self.root.configure(bg="#f0f0f0")  # Установка фона окна
 
         # Заголовок
@@ -22,7 +21,7 @@ class Application:
         self.plaintext_entry.pack(pady=5)
 
         # Ввод ключа
-        tk.Label(self.root, text="Введите 7-символьный ключ:", font=("Arial", 12), bg="#f0f0f0").pack(pady=5)
+        tk.Label(self.root, text="Введите ключ 8-символьный (ascii) 16-символьный (hex):", font=("Arial", 12), bg="#f0f0f0").pack(pady=5)
         self.key_entry = tk.Entry(self.root, width=50, font=("Arial", 12))
         self.key_entry.pack(pady=5)
 
@@ -58,16 +57,19 @@ class Application:
     def encrypt_text(self):
         plaintext = self.plaintext_entry.get()
         key = self.key_entry.get()
+        
         encoding = self.encoding_var.get()  # Получаем выбранную кодировку
-
-        if not key or len(key) != 7:  # Убедитесь, что ключ 7 символов
-            messagebox.showerror("Ошибка", "Ключ должен содержать 7 символов.")
-            return
-
-        # Применяем кодировку
+        
+        if not key:
+            if encoding == 'ascii' and len(key) != 8:  # Убедитесь, что ключ 8 символов
+                messagebox.showerror("Ошибка", "Ключ должен содержать 8 символов.")
+                return
+            elif encoding == 'hex' and len(key) != 14:
+                messagebox.showerror("Ошибка", "Ключ должен содержать 14 символов.")
+                return
+            
         try:
-            plaintext_encoded = plaintext.encode(encoding)
-            ciphertext = encrypt(plaintext_encoded, key)
+            ciphertext = block_encrypt(plaintext, key, encoding)
             self.result_label.config(text=f"Зашифрованный текст: {ciphertext}")
         except Exception as e:
             messagebox.showerror("Ошибка", f"Ошибка кодировки: {str(e)}")
@@ -77,15 +79,18 @@ class Application:
         key = self.key_entry.get()
         encoding = self.encoding_var.get()  # Получаем выбранную кодировку
 
-        if not key or len(key) != 7:  # Убедитесь, что ключ 7 символов
-            messagebox.showerror("Ошибка", "Ключ должен содержать 7 символов.")
-            return
+        if not key:
+            if encoding == 'ascii' and len(key) != 8:  # Убедитесь, что ключ 8 символов
+                messagebox.showerror("Ошибка", "Ключ должен содержать 8 символов.")
+                return
+            elif encoding == 'hex' and len(key) != 14:
+                messagebox.showerror("Ошибка", "Ключ должен содержать 14 символов.")
+                return
 
         # Применяем кодировку
         try:
-            plaintext = decrypt(ciphertext, key)
-            plaintext_decoded = plaintext.decode(encoding)
-            self.result_label.config(text=f"Расшифрованный текст: {plaintext_decoded}")
+            plaintext = block_decrypt(ciphertext, key, encoding)
+            self.result_label.config(text=f"Расшифрованный текст: {plaintext}")
         except Exception as e:
             messagebox.showerror("Ошибка", f"Ошибка кодировки: {str(e)}")
 
@@ -100,7 +105,6 @@ class Application:
 
 
 if __name__ == '__main__':
-    #app = Application()
-    main()
+    app = Application()
 
 

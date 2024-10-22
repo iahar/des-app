@@ -1,6 +1,7 @@
+from cgitb import enable
 import time
+import os
 
-# Hexadecimal to binary conversion
 # Table of Position of 64 bits at initial level: Initial Permutation Table
 initial_perm = [58, 50, 42, 34, 26, 18, 10, 2,
 				60, 52, 44, 36, 28, 20, 12, 4,
@@ -80,7 +81,6 @@ final_perm = [40, 8, 48, 16, 56, 24, 64, 32,
 			34, 2, 42, 10, 50, 18, 58, 26,
 			33, 1, 41, 9, 49, 17, 57, 25]
 
-
 # --parity bit drop table
 keyp = [57, 49, 41, 33, 25, 17, 9,
 		1, 58, 50, 42, 34, 26, 18,
@@ -113,11 +113,12 @@ def ascii2bin(text):
     binary_text = ''
     for char in text:
         binary_text += format(ord(char), '08b')
-    return binary_text
+	# "".join([bin(ord(i))[2:].zfill(8) for i in st])
+    return binary_text[:64].ljust(64, '0')
 
 def bin2ascii(binary_text):
     # Разделяем бинарную строку на группы по 8 бит
-    chars = [binary_text[i:i+8] for i in range(0, len(binary_text), 8)]
+    chars = [binary_text[i:i+8] for i in range(len(binary_text), 8)]
     # Преобразуем каждую группу в соответствующий ASCII-символ
     ascii_text = ''.join(chr(int(char, 2)) for char in chars)
     return ascii_text
@@ -190,13 +191,18 @@ def adding_bits(key):
 			i += 1
 	return bkey
 
-def encrypt(pt, key):
-	key = ascii2bin(key)
-	pt = ascii2bin(pt)
+def encrypt(pt, key, encoding):
+	if encoding == 'hex':
+		pt = "".join([bin(int(i,16))[2:].zfill(4) for i in pt])
+		key = "".join([bin(int(i,16))[2:].zfill(4) for i in key])
+	elif encoding == 'ascii':
+		pt = ascii2bin(pt)
+		key = ascii2bin(key)
+	
 	key = adding_bits(key)
 	# getting 56 bit key from 64 bit using the parity bits
 	key = permute(key, keyp, 56)
-	c = key[0:28] # rkb for RoundKeys in binary
+	c = key[:28] # rkb for RoundKeys in binary
 	d = key[28:] # rk for RoundKeys in hexadecimal
 
 	rkb = []
@@ -216,7 +222,7 @@ def encrypt(pt, key):
 	pt = permute(pt, initial_perm, 64)
 
 	# Splitting
-	left = pt[0:32]
+	left = pt[:32]
 	right = pt[32:]
 
 	for i in range(16):
@@ -242,25 +248,28 @@ def encrypt(pt, key):
 		left = xor(left, sbox_str)
 
 		# Swapper
-		if(i != 15):
+		if i != 15:
 			left, right = right, left
-
-		#print("Round", i + 1, " ", left, " ", right, " ", rkb[i])
-		# print("Round ", i + 1, " ", hex(int(left,2)), " ", hex(int(right,2)), " ", hex(int(rkb[i],2)))
-		combine = left + right
+	
+	combine = left + right
 	# Final permutation: final rearranging of bits to get cipher text
 	cipher_text = permute(combine, final_perm, 64)
 	return hex(int(cipher_text,2))[2:]
 
 
-def decrypt(ct, key):
-	key = ascii2bin(key)
-	ct = str(bin(int(ct, 16)))[2:].zfill(64)
+def decrypt(ct, key, encoding):
+	if encoding == 'hex':
+		ct = "".join([bin(int(i,16))[2:].zfill(4) for i in ct])
+		key = "".join([bin(int(i,16))[2:].zfill(4) for i in key])
+	elif encoding == 'ascii':
+		ct = ascii2bin(ct)
+		key = ascii2bin(key)
+	
 	key = adding_bits(key)
 	# Getting the 56 bit key from 64 bit using the parity bits
 	key = permute(key, keyp, 56)
 	c = key[:28]  # Left half of the key
-	d = key[28:]   # Right half of the key
+	d = key[28:]  # Right half of the key
 	rkb = []
 	rk = []
 	for i in range(16):
@@ -270,8 +279,6 @@ def decrypt(ct, key):
 		combine_str = c + d
 		# Compression of key from 56 to 48 bits
 		round_key = permute(combine_str, key_comp, 48)
-				#print("Round", i + 1, " ", left, " ", right, " ", rkb[i])
-				# print("Round ", i + 1, " ", hex(int(left,2)), " ", hex(int(right,2)), " ", hex(int(rkb[i],2)))
 		rkb.append(round_key)
 		rk.append(bin2ascii(round_key))
 
@@ -292,7 +299,7 @@ def decrypt(ct, key):
 
 		# S-boxes: substituting the value from s-box table by calculating row and column
 		sbox_str = ""
-		for j in range(0, 8):
+		for j in range(8):
 			row = bin2dec(int(xor_x[j * 6] + xor_x[j * 6 + 5]))
 			col = bin2dec(int(xor_x[j * 6 + 1:j * 6 + 5]))
 			val = sbox[j][row][col]
@@ -311,5 +318,83 @@ def decrypt(ct, key):
 	# Combine left and right
 	combine = left + right
 	# Final permutation: final rearranging of bits to get plaintext
-	plain_text = permute(combine, final_perm, 64)
-	return str(hex(int(plain_text,2)))[2:]
+	plain_text_bin = permute(combine, final_perm, 64)
+
+	# Convert binary to ASCII or Hex depending on encoding
+	if encoding == 'ascii':
+		plain_text = bin2ascii(plain_text_bin)  # Convert binary to ASCII
+	else:
+		plain_text = hex(int(plain_text_bin, 2))[2:]  # Convert binary to Hex
+
+	return plain_text
+
+def block_encrypt(pt, key, encoding):
+	if encoding == 'hex':
+		block_size = 16
+	else:
+		block_size = 8
+	ciphertext = ""    
+	for i in range(0, len(pt), block_size):
+		block = pt[i:i+block_size]
+		encrypted_block = encrypt(block, key, encoding)
+		ciphertext += encrypted_block
+    
+	return ciphertext
+
+
+def block_decrypt(ct, key, encoding):
+	if encoding == 'hex':
+		block_size = 16
+	else:
+		block_size = 8
+	plaintext = ""
+	for i in range(0, len(ct), block_size):
+		block = ct[i:i+block_size]
+		decrypted_block = decrypt(block, key, encoding)
+		plaintext += decrypted_block
+    
+	return plaintext
+'''
+# Function to read content from a file
+def read_file(file_path):
+    if os.path.exists(file_path):
+        with open(file_path, 'r') as file:
+            return file.read().strip()
+    else:
+        raise FileNotFoundError(f"The file {file_path} does not exist.")
+
+# Function to write content to a file
+def write_file(file_path, data):
+    with open(file_path, 'w') as file:
+        file.write(data)
+
+# Modify encrypt and decrypt to include reading and writing keys and text from files
+
+def encrypt_file(pt_file, key_file, encoding, output_file):
+    # Read plaintext and key from files
+    pt = read_file(pt_file)
+    key = read_file(key_file)
+
+    # Encrypt the text
+    encrypted_text = block_encrypt(pt, key, encoding)
+
+    # Write the encrypted text to the output file
+    write_file(output_file, encrypted_text)
+    print(f"Encrypted text saved to {output_file}")
+
+def decrypt_file(ct_file, key_file, encoding, output_file):
+    # Read ciphertext and key from files
+    ct = read_file(ct_file)
+    key = read_file(key_file)
+
+    # Decrypt the text
+    decrypted_text = block_decrypt(ct, key, encoding)
+
+    # Write the decrypted text to the output file
+    write_file(output_file, decrypted_text)
+    print(f"Decrypted text saved to {output_file}")
+
+'''
+# сделать взамодействие с файлами
+# функция лавинного эффекта и 2 графика (может быть по hex и ascii)
+# функции для критериев
