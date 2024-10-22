@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 from cgitb import enable
 import time
 import os
@@ -124,9 +124,9 @@ def ascii2bin(text):
     return binary_text[:64].ljust(64, '0')
 
 def bin2ascii(binary_text):
-    # ��������� �������� ������ �� ������ �� 8 ���
+    # Разделяем бинарную строку на группы по 8 бит
     chars = [binary_text[i:i+8] for i in range(len(binary_text), 8)]
-    # ����������� ������ ������ � ��������������� ASCII-������
+    # Преобразуем каждую группу в соответствующий ASCII-символ
     ascii_text = ''.join(chr(int(char, 2)) for char in chars)
     return ascii_text
 
@@ -347,7 +347,6 @@ def block_encrypt(pt, key, encoding):
     
 	return ciphertext
 
-
 def block_decrypt(ct, key, encoding):
 	if encoding == 'hex':
 		block_size = 16
@@ -367,7 +366,8 @@ def block_decrypt(ct, key, encoding):
     
 	return plaintext
 
-def calculate_avalanche(pt1, ct1, key, ind, encoding):
+'''
+def calculate_avalanche(pt1, key, ind, encoding):
 	if encoding == 'hex':
 		pt1 = hex2bin(pt1)
 		key = hex2bin(key)
@@ -385,7 +385,101 @@ def calculate_avalanche(pt1, ct1, key, ind, encoding):
 	return differences
 
 
-	'''
+
+
+# Функция для изменения заданного бита
+def flip_bit(data, bit_position):
+    """Меняет бит в заданной позиции."""
+    bit_list = list(data)
+    bit_list[bit_position] = '0' if bit_list[bit_position] == '1' else '1'
+    return ''.join(bit_list)
+
+# Функция для подсчета различий между двумя бинарными строками
+def count_bit_differences(str1, str2):
+    return sum(c1 != c2 for c1, c2 in zip(str1, str2))
+
+
+# Функция для подсчета изменения битов на каждом раунде
+def des_encrypt_with_tracking(pt, key, encoding, bit_position=None, mode="text"):
+    # Перевод текста и ключа в бинарный формат
+    if encoding == "hex":
+        pt = hex2bin(pt)
+        key = hex2bin(key)
+    else:
+        pt = ascii2bin(pt)
+        key = ascii2bin(key)
+
+    key_bin = permute(key_bin, keyp, 56)
+    
+    # Разбивка ключа на 28-битные части
+    c = key_bin[:28]
+    d = key_bin[28:]
+
+    rkb = []  # Раундовые ключи в бинарном виде
+    for i in range(16):
+        c = shift_left(c, shift_table[i])
+        d = shift_left(d, shift_table[i])
+        round_key = permute(c + d, key_comp, 48)
+        rkb.append(round_key)
+
+    # Initial Permutation
+    pt = permute(pt, initial_perm, 64)
+
+    # Splitting
+    left = pt[:32]
+    right = pt[32:]
+
+    for i in range(16):
+	    # Expansion D-box: Expanding the 32 bits data into 48 bits
+	    right_expanded = permute(right, exp_d, 48)
+		
+		# XOR RoundKey[i] and right_expanded
+		xor_x = xor(right_expanded, rkb[i])
+
+		# S-boxex: substituting the value from s-box table by calculating row and column
+		sbox_str = ""
+		for j in range(0, 8):
+			row = bin2dec(int(xor_x[j * 6] + xor_x[j * 6 + 5]))
+			col = bin2dec(
+				int(xor_x[j * 6 + 1] + xor_x[j * 6 + 2] + xor_x[j * 6 + 3] + xor_x[j * 6 + 4]))
+			val = sbox[j][row][col]
+			sbox_str = sbox_str + dec2bin(val)
+
+		# Straight D-box: After substituting rearranging the bits
+		sbox_str = permute(sbox_str, per, 32)
+
+		# XOR left and sbox_str
+		left = xor(left, sbox_str)
+
+		# Swapper
+		if i != 15:
+			left, right = right, left
+	
+		combine = left + right
+		# Final permutation: final rearranging of bits to get cipher text
+		cipher_text = permute(combine, final_perm, 64)
+
+	# Если изменяем бит в тексте
+	if mode == "text":
+		altered_pt_bin = flip_bit(pt_bin, bit_position)
+		altered_ciphertext = encrypt(altered_pt_bin, key_bin, encoding)
+	# Если изменяем бит в ключе
+	elif mode == "key":
+		altered_key_bin = flip_bit(key_bin, bit_position)
+		altered_ciphertext = encrypt(pt_bin, altered_key_bin, encoding)
+	else:
+		raise ValueError("Укажите, что нужно изменить: текст или ключ")
+
+	# Подсчет изменения битов на каждом раунде
+	differences = []
+	for i in range(16):
+		diff = count_bit_differences(original_ciphertext[i], altered_ciphertext[i])
+		differences.append(diff)
+	print(differences)
+	return differences
+'''
+
+'''
 	# Function to read content from a file
 	def read_file(file_path):
 	if os.path.exists(file_path):

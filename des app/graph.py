@@ -1,40 +1,170 @@
-import matplotlib.pyplot as plt
+п»їfrom calendar import different_locale
+from alg_des import shift_table, adding_bits, permute, shift_left, hex2bin, key_comp
+from alg_des import keyp, ascii2bin, exp_d, initial_perm, xor, bin2dec, sbox, dec2bin, dec2bin
+from alg_des import final_perm, per, bin2ascii
 
 
-# Функция для изменения заданного бита
+def get_rkb(pt, key, encoding):
+    key = adding_bits(key)
+	# getting 56 bit key from 64 bit using the parity bits
+    key = permute(key, keyp, 56)
+    c = key[:28] # rkb for RoundKeys in binary
+    d = key[28:] # rk for RoundKeys in hexadecimal
+
+    rkb = []
+    for i in range(16):
+	    # Shifting the bits by nth shifts by checking from shift table
+        c = shift_left(c, shift_table[i])
+        d = shift_left(d, shift_table[i])
+        combine_str = c + d
+        # Compression of key from 56 to 48 bits
+        round_key = permute(combine_str, key_comp, 48)
+        rkb.append(round_key)
+    return rkb
+
+def encrypt_rk(pt, rkb, n):
+    # Initial Permutation
+    pt = permute(pt, initial_perm, 64)
+
+    # Splitting
+    left = pt[:32]
+    right = pt[32:]
+	# Expansion D-box: Expanding the 32 bits data into 48 bits
+    right_expanded = permute(right, exp_d, 48)
+    # XOR RoundKey[i] and right_expanded
+    xor_x = xor(right_expanded, rkb[n])
+    # S-boxex: substituting the value from s-box table by calculating row and column
+    sbox_str = ""
+    for j in range(8):
+        row = bin2dec(int(xor_x[j * 6] + xor_x[j * 6 + 5]))
+        col = bin2dec(
+	        int(xor_x[j * 6 + 1] + xor_x[j * 6 + 2] + xor_x[j * 6 + 3] + xor_x[j * 6 + 4]))
+        val = sbox[j][row][col]
+        sbox_str = sbox_str + dec2bin(val)
+    # Straight D-box: After substituting rearranging the bits
+    sbox_str = permute(sbox_str, per, 32)
+    # XOR left and sbox_str
+    left = xor(left, sbox_str)
+    # Swapper
+    if n != 15:
+        left, right = right, left
+    combine = left + right
+    # Final permutation: final rearranging of bits to get cipher text
+    cipher_text = permute(combine, final_perm, 64)
+    return cipher_text
+
+
+def calculate_avalanche(pt, key, encoding, bit_position):
+    if encoding == 'hex':
+        pt1 = hex2bin(pt)
+        pt1_list = list(pt1)
+        key = hex2bin(key)
+    else:
+        pt1 = ascii2bin(pt)
+        key = ascii2bin(key)
+    if pt1_list[bit_position] == '1':
+        pt1_list[bit_position] = '0'
+    else:
+        pt1_list[bit_position] = '1'
+    pt2_list = pt1_list
+    pt2 = ''.join(pt2_list)
+
+    rkb1 = get_rkb(pt1, key, encoding)
+    rkb2 = get_rkb(pt2, key, encoding)
+
+    differents_pt = []
+    for i in range(16):
+        ct1 = encrypt_rk(pt1, rkb1, i)
+        ct2 = encrypt_rk(pt2, rkb2, i)
+        differents_pt.append(sum(c1 != c2 for c1, c2 in zip(ct1, ct2)))
+
+
+    key1 = key
+    key1_list = list(key)
+    if key1_list[bit_position] == '1':
+        key1_list[bit_position] = '0'
+    else:
+        key1_list[bit_position] = '1'
+    key2_list = key1_list
+    key2 = ''.join(key2_list)
+    differents_key = []
+
+    rkb1 = get_rkb(pt1, key1, encoding)
+    rkb2 = get_rkb(pt1, key2, encoding)
+
+    for i in range(16):
+        ct1 = encrypt_rk(pt1, rkb1, i)
+        ct2 = encrypt_rk(pt2, rkb2, i)
+        differents_key.append(sum(c1 != c2 for c1, c2 in zip(ct1, ct2)))
+
+    return differents_pt, differents_key
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+'''
+
+# Р¤СѓРЅРєС†РёСЏ РґР»СЏ РёР·РјРµРЅРµРЅРёСЏ Р·Р°РґР°РЅРЅРѕРіРѕ Р±РёС‚Р°
 def flip_bit(data, bit_position):
-    """Меняет бит в заданной позиции."""
+    """РњРµРЅСЏРµС‚ Р±РёС‚ РІ Р·Р°РґР°РЅРЅРѕР№ РїРѕР·РёС†РёРё."""
     bit_list = list(data)
     bit_list[bit_position] = '0' if bit_list[bit_position] == '1' else '1'
     return ''.join(bit_list)
 
-# Функция для подсчета различий между двумя бинарными строками
-def count_bit_differences(str1, str2):
-    return sum(c1 != c2 for c1, c2 in zip(str1, str2))
-# Функция для изменения заданного бита
+# Р¤СѓРЅРєС†РёСЏ РґР»СЏ РёР·РјРµРЅРµРЅРёСЏ Р·Р°РґР°РЅРЅРѕРіРѕ Р±РёС‚Р°
 def flip_bit(data, bit_position):
-    """Меняет бит в заданной позиции."""
+    """РњРµРЅСЏРµС‚ Р±РёС‚ РІ Р·Р°РґР°РЅРЅРѕР№ РїРѕР·РёС†РёРё."""
     bit_list = list(data)
     bit_list[bit_position] = '0' if bit_list[bit_position] == '1' else '1'
     return ''.join(bit_list)
 
-# Функция для подсчета различий между двумя бинарными строками
+# Р¤СѓРЅРєС†РёСЏ РґР»СЏ РїРѕРґСЃС‡РµС‚Р° СЂР°Р·Р»РёС‡РёР№ РјРµР¶РґСѓ РґРІСѓРјСЏ Р±РёРЅР°СЂРЅС‹РјРё СЃС‚СЂРѕРєР°РјРё
 def count_bit_differences(str1, str2):
     return sum(c1 != c2 for c1, c2 in zip(str1, str2))
 
-# Функция для записи данных в файл для построения графика
+# Р¤СѓРЅРєС†РёСЏ РґР»СЏ Р·Р°РїРёСЃРё РґР°РЅРЅС‹С… РІ С„Р°Р№Р» РґР»СЏ РїРѕСЃС‚СЂРѕРµРЅРёСЏ РіСЂР°С„РёРєР°
 def save_differences_to_file(differences, filename):
     with open(filename, 'w') as file:
         for round_num, diff in enumerate(differences, 1):
-            file.write(f"Раунд {round_num}: {diff} бит изменено\n")
+            file.write(f"Р Р°СѓРЅРґ {round_num}: {diff} Р±РёС‚ РёР·РјРµРЅРµРЅРѕ\n")
 
-# Функция для отображения графика
+# Р¤СѓРЅРєС†РёСЏ РґР»СЏ РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ РіСЂР°С„РёРєР°
 def plot_differences(differences):
     rounds = list(range(1, len(differences) + 1))
     plt.plot(rounds, differences, marker='o')
-    plt.title("Лавинный эффект: Изменение битов после каждого раунда")
-    plt.xlabel("Раунд")
-    plt.ylabel("Число изменённых бит")
+    plt.title("Р›Р°РІРёРЅРЅС‹Р№ СЌС„С„РµРєС‚: РР·РјРµРЅРµРЅРёРµ Р±РёС‚РѕРІ РїРѕСЃР»Рµ РєР°Р¶РґРѕРіРѕ СЂР°СѓРЅРґР°")
+    plt.xlabel("Р Р°СѓРЅРґ")
+    plt.ylabel("Р§РёСЃР»Рѕ РёР·РјРµРЅС‘РЅРЅС‹С… Р±РёС‚")
     plt.grid(True)
     plt.show()
 def des_encrypt_with_tracking(pt, key, altered_pt=None, altered_key=None, mode="text"):
@@ -65,7 +195,7 @@ def des_encrypt_with_tracking(pt, key, altered_pt=None, altered_key=None, mode="
         altered_key = ascii2bin(altered_key)
         altered_cipher = encrypt(pt, altered_key)
     else:
-        raise ValueError("Не указан изменённый текст или ключ")
+        raise ValueError("РќРµ СѓРєР°Р·Р°РЅ РёР·РјРµРЅС‘РЅРЅС‹Р№ С‚РµРєСЃС‚ РёР»Рё РєР»СЋС‡")
 
     differences = []
 
@@ -77,7 +207,7 @@ def des_encrypt_with_tracking(pt, key, altered_pt=None, altered_key=None, mode="
 
     return differences
 
-# Функция для исследования лавинного эффекта
+# Р¤СѓРЅРєС†РёСЏ РґР»СЏ РёСЃСЃР»РµРґРѕРІР°РЅРёСЏ Р»Р°РІРёРЅРЅРѕРіРѕ СЌС„С„РµРєС‚Р°
 def investigate_avalanche_effect():
     pt = "example_text"
     key = "secret_k"
@@ -89,3 +219,5 @@ def investigate_avalanche_effect():
     save_differences_to_file(differences, "bit_changes.txt")
     plot_differences(differences)
 investigate_avalanche_effect()
+
+'''
