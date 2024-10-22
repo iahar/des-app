@@ -1,6 +1,12 @@
 from cgitb import enable
 import time
 import os
+# make interaction with files
+# avalanche effect function and 2 graphics (can be hex and ascii)
+# functions for criteria
+
+
+
 
 # Table of Position of 64 bits at initial level: Initial Permutation Table
 initial_perm = [58, 50, 42, 34, 26, 18, 10, 2,
@@ -395,6 +401,3 @@ def decrypt_file(ct_file, key_file, encoding, output_file):
     print(f"Decrypted text saved to {output_file}")
 
 '''
-# make interaction with files
-# avalanche effect function and 2 graphics (can be hex and ascii)
-# functions for criteria
