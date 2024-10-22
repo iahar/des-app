@@ -5,6 +5,14 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from tkinter import messagebox, StringVar
 from alg_des import block_encrypt, block_decrypt, calculate_avalanche
 
+'''
+example for encryption
+pt =  "12345678"
+key = "key4577"
+#pt hex = '3132333435363738'
+#key hex =	'6b657934353737'
+# crypt dd1caa733b0f83a8
+'''
 class Application:
     def __init__(self):
         # Создание главного окна
