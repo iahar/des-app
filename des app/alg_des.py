@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from cgitb import enable
 import time
 import os
@@ -129,6 +130,9 @@ def bin2ascii(binary_text):
     ascii_text = ''.join(chr(int(char, 2)) for char in chars)
     return ascii_text
 
+def hex2bin(text):
+	return "".join([bin(int(i,16))[2:].zfill(4) for i in text])
+
 # Binary to decimal conversion
 def bin2dec(binary):
 	binary1 = binary
@@ -197,14 +201,8 @@ def adding_bits(key):
 			i += 1
 	return bkey
 
+
 def encrypt(pt, key, encoding):
-	if encoding == 'hex':
-		pt = "".join([bin(int(i,16))[2:].zfill(4) for i in pt])
-		key = "".join([bin(int(i,16))[2:].zfill(4) for i in key])
-	elif encoding == 'ascii':
-		pt = ascii2bin(pt)
-		key = ascii2bin(key)
-	
 	key = adding_bits(key)
 	# getting 56 bit key from 64 bit using the parity bits
 	key = permute(key, keyp, 56)
@@ -223,7 +221,8 @@ def encrypt(pt, key, encoding):
 
 		rkb.append(round_key)
 		rk.append(bin2ascii(round_key))
-	 
+		
+
 	# Initial Permutation
 	pt = permute(pt, initial_perm, 64)
 
@@ -260,17 +259,11 @@ def encrypt(pt, key, encoding):
 	combine = left + right
 	# Final permutation: final rearranging of bits to get cipher text
 	cipher_text = permute(combine, final_perm, 64)
+
 	return hex(int(cipher_text,2))[2:]
 
 
 def decrypt(ct, key, encoding):
-	if encoding == 'hex':
-		ct = "".join([bin(int(i,16))[2:].zfill(4) for i in ct])
-		key = "".join([bin(int(i,16))[2:].zfill(4) for i in key])
-	elif encoding == 'ascii':
-		ct = ascii2bin(ct)
-		key = ascii2bin(key)
-	
 	key = adding_bits(key)
 	# Getting the 56 bit key from 64 bit using the parity bits
 	key = permute(key, keyp, 56)
@@ -337,11 +330,18 @@ def decrypt(ct, key, encoding):
 def block_encrypt(pt, key, encoding):
 	if encoding == 'hex':
 		block_size = 16
+		key = hex2bin(key)
 	else:
 		block_size = 8
+		key = ascii2bin(key)
+		
 	ciphertext = ""    
 	for i in range(0, len(pt), block_size):
 		block = pt[i:i+block_size]
+		if encoding == 'hex':
+			block = hex2bin(block)
+		elif encoding == 'ascii':
+			block = ascii2bin(block)
 		encrypted_block = encrypt(block, key, encoding)
 		ciphertext += encrypted_block
     
@@ -351,53 +351,78 @@ def block_encrypt(pt, key, encoding):
 def block_decrypt(ct, key, encoding):
 	if encoding == 'hex':
 		block_size = 16
+		key = hex2bin(key)
 	else:
 		block_size = 8
+		key = ascii2bin(key)
 	plaintext = ""
 	for i in range(0, len(ct), block_size):
 		block = ct[i:i+block_size]
+		if encoding == 'hex':
+			block = hex2bin(block)
+		elif encoding == 'ascii':
+			block = ascii2bin(block)
 		decrypted_block = decrypt(block, key, encoding)
 		plaintext += decrypted_block
     
 	return plaintext
-'''
-# Function to read content from a file
-def read_file(file_path):
-    if os.path.exists(file_path):
-        with open(file_path, 'r') as file:
-            return file.read().strip()
-    else:
-        raise FileNotFoundError(f"The file {file_path} does not exist.")
 
-# Function to write content to a file
-def write_file(file_path, data):
-    with open(file_path, 'w') as file:
-        file.write(data)
+def calculate_avalanche(pt1, ct1, key, ind, encoding):
+	if encoding == 'hex':
+		pt1 = hex2bin(pt1)
+		key = hex2bin(key)
+	else:
+		pt1 = ascii2bin(pt1)
+		key = ascii2bin(key)
+	# calculation of the avalanche effect
+	pt2 = pt1
+	ct2 = encrypt(pt2, key, encoding)
 
-# Modify encrypt and decrypt to include reading and writing keys and text from files
+	ct1 = hex2bin(ct1)
+	ct2 = hex2bin(ct2)
+	differences = []
+	differences.append(sum(bit1 != bit2 for bit1, bit2 in zip(list(ct1), list(ct2))))
+	return differences
 
-def encrypt_file(pt_file, key_file, encoding, output_file):
-    # Read plaintext and key from files
-    pt = read_file(pt_file)
-    key = read_file(key_file)
 
-    # Encrypt the text
-    encrypted_text = block_encrypt(pt, key, encoding)
+	'''
+	# Function to read content from a file
+	def read_file(file_path):
+	if os.path.exists(file_path):
+		with open(file_path, 'r') as file:
+			return file.read().strip()
+	else:
+		raise FileNotFoundError(f"The file {file_path} does not exist.")
 
-    # Write the encrypted text to the output file
-    write_file(output_file, encrypted_text)
-    print(f"Encrypted text saved to {output_file}")
+	# Function to write content to a file
+	def write_file(file_path, data):
+	with open(file_path, 'w') as file:
+		file.write(data)
 
-def decrypt_file(ct_file, key_file, encoding, output_file):
-    # Read ciphertext and key from files
-    ct = read_file(ct_file)
-    key = read_file(key_file)
+	# Modify encrypt and decrypt to include reading and writing keys and text from files
 
-    # Decrypt the text
-    decrypted_text = block_decrypt(ct, key, encoding)
+	def encrypt_file(pt_file, key_file, encoding, output_file):
+	# Read plaintext and key from files
+	pt = read_file(pt_file)
+	key = read_file(key_file)
 
-    # Write the decrypted text to the output file
-    write_file(output_file, decrypted_text)
-    print(f"Decrypted text saved to {output_file}")
+	# Encrypt the text
+	encrypted_text = block_encrypt(pt, key, encoding)
 
-'''
+	# Write the encrypted text to the output file
+	write_file(output_file, encrypted_text)
+	print(f"Encrypted text saved to {output_file}")
+
+	def decrypt_file(ct_file, key_file, encoding, output_file):
+	# Read ciphertext and key from files
+	ct = read_file(ct_file)
+	key = read_file(key_file)
+
+	# Decrypt the text
+	decrypted_text = block_decrypt(ct, key, encoding)
+
+	# Write the decrypted text to the output file
+	write_file(output_file, decrypted_text)
+	print(f"Decrypted text saved to {output_file}")
+
+	'''
