@@ -55,18 +55,14 @@ def encrypt_rk(pt, rkb, n):
 def calculate_avalanche(pt, key, encoding, bit_position):
     if encoding == 'hex':
         pt1 = hex2bin(pt)
-        pt1_list = list(pt1)
         key = hex2bin(key)
     else:
-        pt1 = ascii2bin(pt)
-        pt1_list = list(pt1)
+        pt1 = ascii2bin(pt)        
         key = ascii2bin(key)
-    if pt1_list[bit_position] == '1':
-        pt1_list[bit_position] = '0'
-    else:
-        pt1_list[bit_position] = '1'
-    pt2_list = pt1_list
-    pt2 = ''.join(pt2_list)
+    pt1_list = list(pt1)
+
+    pt1_list[bit_position] = '0' if pt1_list[bit_position] == '1' else '1'
+    pt2 = ''.join(pt1_list)
 
     rkb1 = get_rkb(pt1, key, encoding)
     rkb2 = get_rkb(pt2, key, encoding)
@@ -78,14 +74,10 @@ def calculate_avalanche(pt, key, encoding, bit_position):
         differents_pt.append(sum(c1 != c2 for c1, c2 in zip(ct1, ct2)))
 
 
-    key1 = key
+    key1 = str(key)
     key1_list = list(key)
-    if key1_list[bit_position] == '1':
-        key1_list[bit_position] = '0'
-    else:
-        key1_list[bit_position] = '1'
-    key2_list = key1_list
-    key2 = ''.join(key2_list)
+    key1_list[bit_position] = '0' if key1_list[bit_position] == '1' else '1'
+    key2 = ''.join(key1_list)
     differents_key = []
 
     rkb1 = get_rkb(pt1, key1, encoding)
