@@ -1,7 +1,5 @@
-﻿from calendar import different_locale
-from alg_des import shift_table, adding_bits, permute, shift_left, hex2bin, key_comp
-from alg_des import keyp, ascii2bin, exp_d, initial_perm, xor, bin2dec, sbox, dec2bin, dec2bin
-from alg_des import final_perm, per, bin2ascii
+﻿from alg_des import adding_bits, permute, shift_left, hex2bin, ascii2bin, initial_perm, xor, bin2dec, dec2bin, dec2bin
+from alg_des import final_perm, per, bin2ascii, keyp, key_comp,  exp_d, sbox, shift_table
 
 
 def get_rkb(pt, key, encoding):

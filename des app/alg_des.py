@@ -330,10 +330,12 @@ def block_encrypt(pt, key, encoding):
 	if encoding == 'hex':
 		block_size = 16
 		key = hex2bin(key)
-	else:
+	elif encoding == 'ascii':
 		block_size = 8
 		key = ascii2bin(key)
-		
+	elif encoding == 'bin':
+		block_size = 64
+
 	ciphertext = ""    
 	for i in range(0, len(pt), block_size):
 		block = pt[i:i+block_size]
@@ -350,7 +352,7 @@ def block_decrypt(ct, key, encoding):
 	if encoding == 'hex':
 		block_size = 16
 		key = hex2bin(key)
-	else:
+	elif encoding == 'ascii':
 		block_size = 8
 		key = ascii2bin(key)
 	plaintext = ""

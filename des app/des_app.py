@@ -6,6 +6,8 @@ from tkinter import messagebox, StringVar
 import os
 from alg_des import block_encrypt, block_decrypt
 from graph import calculate_avalanche
+from criteria import calculate
+
 
 class Application:
     def __init__(self):
@@ -223,4 +225,5 @@ class Application:
         self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
 if __name__ == '__main__':
-    app = Application()
+    #app = Application()
+    calculate()
