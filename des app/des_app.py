@@ -225,5 +225,5 @@ class Application:
         self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
 if __name__ == '__main__':
-    #app = Application()
+    app = Application()
     calculate()
