@@ -61,6 +61,7 @@ def calculate_avalanche(pt, key, encoding, bit_position):
         key = hex2bin(key)
     else:
         pt1 = ascii2bin(pt)
+        pt1_list = list(pt1)
         key = ascii2bin(key)
     if pt1_list[bit_position] == '1':
         pt1_list[bit_position] = '0'

@@ -120,7 +120,6 @@ def ascii2bin(text):
     binary_text = ''
     for char in text:
         binary_text += format(ord(char), '08b')
-	# "".join([bin(ord(i))[2:].zfill(8) for i in st])
     return binary_text[:64].ljust(64, '0')
 
 def bin2ascii(binary_text):
